@@ -1,7 +1,23 @@
-# Tauri + Vanilla TS
+# Tauri Yeelight
 
-This template should help get you started developing with Tauri in vanilla HTML, CSS and Typescript.
+Desktop app for controlling Yeelight smart bulbs.
 
-## Recommended IDE Setup
+## Development
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+```bash
+npm install
+npm run tauri dev
+```
+
+## Build
+
+```bash
+npm run tauri build
+```
+
+## Tech Stack
+
+- Tauri 2
+- React
+- TypeScript
+- Vite
