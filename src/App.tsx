@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { listen } from "@tauri-apps/api/event";
 import { useYeelight } from "./useYeelight";
 import { ConnectionCard } from "./components/ConnectionCard";
 import { MainControls } from "./components/MainControls";
@@ -13,6 +15,20 @@ export function App() {
     effect: state.gentleTransitions ? "smooth" : "sudden",
     duration: state.gentleTransitions ? 500 : 30,
   };
+
+  useEffect(() => {
+    const unlistenToggle = listen("tray-toggle", () => {
+      actions.sendCommand("toggle", []);
+    });
+    const unlistenMoonlight = listen("tray-moonlight", () => {
+      actions.sendCommand("set_power", ["on", transition.effect, transition.duration, 5]);
+    });
+
+    return () => {
+      unlistenToggle.then((fn) => fn());
+      unlistenMoonlight.then((fn) => fn());
+    };
+  }, [transition]);
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-4 p-4 md:p-8">
