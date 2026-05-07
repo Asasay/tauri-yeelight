@@ -1,6 +1,10 @@
 # Tauri Yeelight
 
-Desktop app for controlling Yeelight smart bulbs.
+Desktop app for controlling Yeelight smart bulbs through LAN.
+
+## Protocol
+
+The miIO protocol documentation can be found [here](https://github.com/OpenMiHome/mihome-binary-protocol/blob/master/doc/PROTOCOL.md).
 
 ## Development
 
