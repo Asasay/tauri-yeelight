@@ -1,7 +1,6 @@
-import { Button } from "./ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Label } from "./ui/label";
 import { Switch } from "./ui/switch";
+import { CollapsibleCard } from "./CollapsibleCard";
 
 type Props = {
   ambientOn: boolean;
@@ -16,12 +15,8 @@ type Props = {
 
 export function AmbientCard({ ambientOn, ambientBrightness, busy, connectionReady, transition, setAmbientOn, setAmbientBrightness, onCommand }: Props) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Ambient light</CardTitle>
-        <CardDescription>Secondary light source (night light).</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <CollapsibleCard title="Ambient light" defaultFolded={false}>
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
           <span className="text-sm text-slate-300">Ambient</span>
           <Switch
@@ -45,12 +40,10 @@ export function AmbientCard({ ambientOn, ambientBrightness, busy, connectionRead
             max={100}
             value={ambientBrightness}
             onChange={(e) => setAmbientBrightness(Number(e.target.value))}
+            onMouseUp={() => !busy && connectionReady && ambientOn && onCommand("bg_set_bright", [ambientBrightness, transition.effect, transition.duration])}
           />
-          <Button variant="secondary" disabled={busy || !connectionReady || !ambientOn} onClick={() => onCommand("bg_set_bright", [ambientBrightness, transition.effect, transition.duration])}>
-            Apply
-          </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </CollapsibleCard>
   );
 }

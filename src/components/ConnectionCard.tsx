@@ -1,8 +1,8 @@
 import { Settings2 } from "lucide-react";
 import { Button } from "./ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+import { CollapsibleCard } from "./CollapsibleCard";
 
 type Props = {
   ip: string;
@@ -16,16 +16,11 @@ type Props = {
 };
 
 export function ConnectionCard({ ip, token, port, busy, setIp, setToken, setPort, onRunDiagnostics }: Props) {
+  const isConnected = ip.trim().length > 0 && token.trim().length > 0;
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Settings2 className="h-4 w-4 text-blue-300" />
-          Connection
-        </CardTitle>
-        <CardDescription>Set this once, then use the controls below.</CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-3 md:grid-cols-3">
+    <CollapsibleCard title="Connection" defaultFolded={isConnected}>
+      <div className="grid gap-3 md:grid-cols-3">
         <div className="space-y-2">
           <Label htmlFor="ip">Light IP</Label>
           <Input id="ip" placeholder="192.168.1.120" value={ip} onChange={(e) => setIp(e.target.value)} />
@@ -57,10 +52,11 @@ export function ConnectionCard({ ip, token, port, busy, setIp, setToken, setPort
             disabled={busy || !ip.trim()}
             onClick={onRunDiagnostics}
           >
-            Run network diagnostics
+            <Settings2 className="mr-2 h-4 w-4" />
+            Run diagnostics
           </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </CollapsibleCard>
   );
 }

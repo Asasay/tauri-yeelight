@@ -16,13 +16,6 @@ export function App() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-4 p-4 md:p-8">
-      <section className="mb-1">
-        <h1 className="text-3xl font-semibold tracking-tight text-slate-100">Yeelight Controller</h1>
-        <p className="mt-1 text-sm text-slate-400">
-          Fast, friendly controls for your ceiling light via miIO.
-        </p>
-      </section>
-
       <ConnectionCard
         ip={state.ip}
         token={state.token}

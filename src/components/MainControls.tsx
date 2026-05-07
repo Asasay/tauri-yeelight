@@ -1,7 +1,7 @@
-import { Moon, Power, RefreshCcw, SunMedium, ThermometerSun } from "lucide-react";
+import { Moon, Power, RefreshCcw } from "lucide-react";
 import { Button } from "./ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Label } from "./ui/label";
+import { CollapsibleCard } from "./CollapsibleCard";
 
 type Props = {
   brightness: number;
@@ -21,24 +21,18 @@ export function MainControls({
   setBrightness, setCt, setMoonlight, onCommand,
 }: Props) {
   return (
-    <Card className="lg:col-span-2">
-      <CardHeader>
-        <CardTitle>Main controls</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-2 sm:grid-cols-3">
-          <Button disabled={busy || !connectionReady} onClick={() => onCommand("set_power", ["on", transition.effect, transition.duration])}>
-            <Power className="mr-2 h-4 w-4" /> On
+    <CollapsibleCard title="Main controls" defaultFolded={false}>
+      <div className="space-y-4">
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Button className="w-full" disabled={busy || !connectionReady} onClick={() => onCommand("toggle", [])}>
+            <Power className="mr-2 h-4 w-4" /> Toggle
           </Button>
-          <Button variant="secondary" disabled={busy || !connectionReady} onClick={() => onCommand("set_power", ["off", transition.effect, transition.duration])}>
-            Off
-          </Button>
-          <Button variant="secondary" disabled={busy || !connectionReady} onClick={() => onCommand("toggle", [])}>
-            Toggle
+          <Button variant="ghost" disabled={busy || !connectionReady} onClick={() => onCommand("get_prop", ["power", "bright", "ct", "color_mode", "nl_br", "active_mode", "name"])}>
+            <RefreshCcw className="mr-2 h-4 w-4" /> Refresh
           </Button>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="flex">
           <Button
             variant={moonlight ? "default" : "secondary"}
             disabled={busy || !connectionReady}
@@ -49,9 +43,6 @@ export function MainControls({
           >
             <Moon className="mr-2 h-4 w-4" />
             {moonlight ? "Moonlight" : "Full Light"}
-          </Button>
-          <Button variant="ghost" disabled={busy || !connectionReady} onClick={() => onCommand("get_prop", ["power", "bright", "ct", "color_mode", "nl_br", "active_mode", "name"])}>
-            <RefreshCcw className="mr-2 h-4 w-4" /> Refresh state
           </Button>
         </div>
 
@@ -68,10 +59,8 @@ export function MainControls({
             max={100}
             value={brightness}
             onChange={(e) => setBrightness(Number(e.target.value))}
+            onMouseUp={() => !busy && connectionReady && onCommand("set_bright", [brightness, transition.effect, transition.duration])}
           />
-          <Button variant="secondary" disabled={busy || !connectionReady} onClick={() => onCommand("set_bright", [brightness, transition.effect, transition.duration])}>
-            <SunMedium className="mr-2 h-4 w-4" /> Apply brightness
-          </Button>
         </div>
 
         <div className="space-y-2">
@@ -87,12 +76,10 @@ export function MainControls({
             max={6500}
             value={ct}
             onChange={(e) => setCt(Number(e.target.value))}
+            onMouseUp={() => !busy && connectionReady && onCommand("set_ct_abx", [ct, transition.effect, transition.duration])}
           />
-          <Button variant="secondary" disabled={busy || !connectionReady} onClick={() => onCommand("set_ct_abx", [ct, transition.effect, transition.duration])}>
-            <ThermometerSun className="mr-2 h-4 w-4" /> Apply temperature
-          </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </CollapsibleCard>
   );
 }

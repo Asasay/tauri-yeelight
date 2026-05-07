@@ -1,7 +1,7 @@
 import { Zap } from "lucide-react";
 import { Button } from "./ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Switch } from "./ui/switch";
+import { CollapsibleCard } from "./CollapsibleCard";
 
 type Props = {
   gentleTransitions: boolean;
@@ -13,24 +13,22 @@ type Props = {
 
 export function PresetsCard({ gentleTransitions, busy, connectionReady, onToggleTransitions, onCommand }: Props) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Quick presets</CardTitle>
-        <CardDescription>One-click everyday scenes.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        <Button variant="secondary" className="w-full" disabled={busy || !connectionReady} onClick={() => onCommand("set_scene", ["ct", 2700, 20])}>
-          Relax (warm)
-        </Button>
-        <Button variant="secondary" className="w-full" disabled={busy || !connectionReady} onClick={() => onCommand("set_scene", ["ct", 3500, 65])}>
-          Reading
-        </Button>
-        <Button variant="secondary" className="w-full" disabled={busy || !connectionReady} onClick={() => onCommand("set_scene", ["ct", 4300, 80])}>
-          Focus
-        </Button>
-        <Button variant="secondary" className="w-full" disabled={busy || !connectionReady} onClick={() => onCommand("set_scene", ["ct", 5500, 100])}>
-          Daylight
-        </Button>
+    <CollapsibleCard title="Presets" defaultFolded={false}>
+      <div className="space-y-2">
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="secondary" disabled={busy || !connectionReady} onClick={() => onCommand("set_scene", ["ct", 2700, 20])}>
+            🌙 Relax
+          </Button>
+          <Button variant="secondary" disabled={busy || !connectionReady} onClick={() => onCommand("set_scene", ["ct", 3500, 65])}>
+            📖 Reading
+          </Button>
+          <Button variant="secondary" disabled={busy || !connectionReady} onClick={() => onCommand("set_scene", ["ct", 4300, 80])}>
+            🎯 Focus
+          </Button>
+          <Button variant="secondary" disabled={busy || !connectionReady} onClick={() => onCommand("set_scene", ["ct", 5500, 100])}>
+            ☀️ Daylight
+          </Button>
+        </div>
 
         <div className="mt-4 flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
           <div className="flex items-center gap-2">
@@ -39,7 +37,7 @@ export function PresetsCard({ gentleTransitions, busy, connectionReady, onToggle
           </div>
           <Switch checked={gentleTransitions} onCheckedChange={onToggleTransitions} />
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </CollapsibleCard>
   );
 }
