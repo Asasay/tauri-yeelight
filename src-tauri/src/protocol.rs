@@ -3,8 +3,10 @@
 //! This module handles building and parsing miIO protocol packets,
 //! including the initial hello handshake and command/response packets.
 
-use crate::types::{HelloResponse, MiioError, MIIO_HEADER_SIZE, MIIO_MAGIC};
+use crate::types::{HelloResponse, MiioError, MIIO_HEADER_SIZE, MIIO_MAGIC, RECV_BUFFER_SIZE, HELLO_RETRY_COUNT};
 use crate::crypto::md5_bytes;
+use tokio::net::UdpSocket;
+use tokio::time::{timeout, Duration};
 
 /// Builds a complete miIO command packet.
 ///
@@ -94,53 +96,40 @@ pub fn parse_hello_response(data: &[u8]) -> Result<HelloResponse, MiioError> {
 ///
 /// This sends a hello packet and waits for a response containing the
 /// device ID and timestamp needed for encrypted communication.
-///
-/// # Arguments
-/// * `socket` - UDP socket to use
-/// * `addr` - Target address (ip:port)
-/// * `recv_buf` - Buffer to store response
-///
-/// # Returns
-/// * `Ok(HelloResponse)` - Device ID and timestamp
-/// * `Err(MiioError)` - If handshake fails
-pub fn hello_handshake(
-    socket: &std::net::UdpSocket,
+pub async fn hello_handshake(
     addr: &str,
-    recv_buf: &mut [u8; 2048],
 ) -> Result<HelloResponse, MiioError> {
-    use std::io::ErrorKind;
-
     let (target_ip, target_port) = split_host_port(addr)?;
     let hello = make_hello_packet();
-    let mut last_timeout = false;
 
-    // Try unicast first
-    for _ in 0..3 {
-        socket.send_to(&hello, addr)?;
-        match socket.recv_from(recv_buf) {
-            Ok((hello_len, _)) => return parse_hello_response(&recv_buf[..hello_len]),
-            Err(err) if err.kind() == ErrorKind::TimedOut || err.kind() == ErrorKind::WouldBlock => {
-                last_timeout = true;
-            }
-            Err(err) => return Err(MiioError::Socket(err)),
+    let socket = UdpSocket::bind("0.0.0.0:0").await?;
+    let mut last_timeout = false;
+    let mut recv_buf = [0u8; RECV_BUFFER_SIZE];
+
+    for _ in 0..HELLO_RETRY_COUNT {
+        socket.send_to(&hello, addr).await?;
+        match timeout(Duration::from_secs(2), socket.recv_from(&mut recv_buf)).await {
+            Ok(Ok((len, _))) => return parse_hello_response(&recv_buf[..len]),
+            Ok(Err(_)) => {}
+            Err(_) => last_timeout = true,
         }
     }
 
-    // Fall back to broadcast (some devices only respond to broadcast)
+    drop(socket);
+    let socket = UdpSocket::bind("0.0.0.0:0").await?;
     socket.set_broadcast(true)?;
     let broadcast_addr = format!("255.255.255.255:{target_port}");
-    for _ in 0..3 {
-        socket.send_to(&hello, &broadcast_addr)?;
-        match socket.recv_from(recv_buf) {
-            Ok((hello_len, src)) => {
+
+    for _ in 0..HELLO_RETRY_COUNT {
+        socket.send_to(&hello, &broadcast_addr).await?;
+        match timeout(Duration::from_secs(2), socket.recv_from(&mut recv_buf)).await {
+            Ok(Ok((len, src))) => {
                 if src.ip().to_string() == target_ip {
-                    return parse_hello_response(&recv_buf[..hello_len]);
+                    return parse_hello_response(&recv_buf[..len]);
                 }
             }
-            Err(err) if err.kind() == ErrorKind::TimedOut || err.kind() == ErrorKind::WouldBlock => {
-                last_timeout = true;
-            }
-            Err(err) => return Err(MiioError::Socket(err)),
+            Ok(Err(_)) => {}
+            Err(_) => last_timeout = true,
         }
     }
 
