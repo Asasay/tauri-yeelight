@@ -9,82 +9,22 @@
 //! - `protocol` - Packet building and parsing
 //! - `network` - Device discovery and diagnostics
 //! - `commands` - Tauri command handlers
+//! - `tray` - System tray and window event handling
 
 pub mod commands;
 pub mod crypto;
 pub mod network;
 pub mod protocol;
+pub mod tray;
 pub mod types;
-
-use tauri::{
-    menu::{Menu, MenuItem},
-    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Emitter, Manager,
-};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
-            let toggle_item = MenuItem::with_id(app, "toggle", "Toggle Power", true, None::<&str>)?;
-            let moonlight_item = MenuItem::with_id(app, "moonlight", "Toggle Moonlight", true, None::<&str>)?;
-            let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-
-            let menu = Menu::with_items(app, &[&toggle_item, &moonlight_item, &quit_item])?;
-
-            let _tray = TrayIconBuilder::new()
-                .icon(app.default_window_icon().unwrap().clone())
-                .menu(&menu)
-                .show_menu_on_left_click(false)
-                .on_menu_event(|app, event| match event.id.as_ref() {
-                    "toggle" => {
-                        let _ = app.emit("tray-toggle", ());
-                    }
-                    "moonlight" => {
-                        let _ = app.emit("tray-moonlight", ());
-                    }
-                    "quit" => {
-                        app.exit(0);
-                    }
-                    _ => {}
-                })
-                .on_tray_icon_event(|tray, event| {
-                    if let TrayIconEvent::Click {
-                        button: MouseButton::Left,
-                        button_state: MouseButtonState::Up,
-                        ..
-                    } = event
-                    {
-                        let app = tray.app_handle();
-                        if let Some(window) = app.get_webview_window("main") {
-                            let visible = window.is_visible().unwrap_or(false);
-                            if visible {
-                                let _ = window.hide();
-                            } else {
-                                let _ = window.unminimize();
-                                let _ = window.show();
-                                let _ = window.set_focus();
-                            }
-                        }
-                    }
-                })
-                .build(app)?;
-
-            if let Some(window) = app.get_webview_window("main") {
-                let app_handle = app.handle().clone();
-                let window_clone = window.clone();
-                window.on_window_event(move |event| {
-                    match event {
-                        tauri::WindowEvent::CloseRequested { api: _, .. } => {
-                            let _ = window_clone.close();
-                            app_handle.exit(0);
-                        }
-                        _ => {}
-                    }
-                });
-            }
-
+            tray::setup_tray(app)?;
+            tray::setup_window_close_handler(app)?;
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

@@ -3402,22 +3402,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tauri-app"
-version = "0.1.0"
-dependencies = [
- "aes",
- "cbc",
- "cipher",
- "md5",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-opener",
- "thiserror 1.0.69",
-]
-
-[[package]]
 name = "tauri-build"
 version = "2.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4930,6 +4914,22 @@ dependencies = [
  "libc",
  "once_cell",
  "pkg-config",
+]
+
+[[package]]
+name = "yeelight-controller"
+version = "0.1.0"
+dependencies = [
+ "aes",
+ "cbc",
+ "cipher",
+ "md5",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-opener",
+ "thiserror 1.0.69",
 ]
 
 [[package]]

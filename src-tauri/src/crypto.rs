@@ -3,7 +3,7 @@
 //! This module handles token processing, key derivation, and payload
 //! encryption/decryption using AES-128-CBC.
 
-use crate::types::MiioError;
+use crate::types::{MiioError, MIIO_HEADER_SIZE};
 use aes::Aes128;
 use cbc::cipher::block_padding::Pkcs7;
 use cbc::cipher::{BlockDecryptMut, BlockEncryptMut, KeyIvInit};
@@ -93,8 +93,6 @@ pub fn miio_encrypt_payload(payload: &[u8], key: &[u8], iv: &[u8]) -> Result<Vec
 /// * `Err(MiioError::Protocol)` - If packet is too short
 /// * `Err(MiioError::Crypto)` - If decryption fails
 pub fn decrypt_miio_packet(data: &[u8], token: &[u8]) -> Result<Vec<u8>, MiioError> {
-    const MIIO_HEADER_SIZE: usize = 32;
-
     if data.len() < MIIO_HEADER_SIZE {
         return Err(MiioError::Protocol("response too short".to_string()));
     }

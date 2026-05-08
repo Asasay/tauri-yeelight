@@ -3,14 +3,15 @@
 //! This module handles TCP connectivity tests, UDP hello probes,
 //! and broadcast scanning for device discovery.
 
-use crate::protocol::parse_hello_response;
+use crate::protocol::{parse_hello_response, make_hello_packet};
 use crate::types::{
-    BroadcastDeviceSeen, BroadcastScanResult, DiagnosticsRequest, DiagnosticsReport, MiioError,
-    TcpProbeResult, UdpHelloProbeResult,
+    BroadcastDeviceSeen, BroadcastScanResult, DiagnosticsRequest, DiagnosticsReport, MiioError, TcpProbeResult,
+    UdpHelloProbeResult, MIIO_PORT, YEELIGHT_PORT, RECV_BUFFER_SIZE, DEFAULT_UDP_TIMEOUT_SECS,
+    HELLO_RETRY_COUNT, BROADCAST_SCAN_DURATION_MS,
 };
 use std::collections::HashSet;
 use std::io::ErrorKind;
-use std::net::{SocketAddr, TcpStream};
+use std::net::{SocketAddr, TcpStream, UdpSocket};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 /// Runs complete diagnostics on a device.
@@ -27,12 +28,12 @@ pub fn run_diagnostics(request: DiagnosticsRequest) -> Result<DiagnosticsReport,
     }
 
     let miio_port = request.port;
-    let tcp_yeelight_55443 = probe_tcp_connect(&target_ip, 55443, Duration::from_secs(2));
-    let tcp_miio_54321 = probe_tcp_connect(&target_ip, 54321, Duration::from_secs(2));
+    let tcp_yeelight_55443 = probe_tcp_connect(&target_ip, YEELIGHT_PORT, Duration::from_secs(2));
+    let tcp_miio_54321 = probe_tcp_connect(&target_ip, MIIO_PORT, Duration::from_secs(2));
 
     let udp_unicast_hello = probe_udp_hello_unicast(&target_ip, miio_port)?;
 
-    let udp_broadcast_scan = scan_udp_broadcast_hello(miio_port, &target_ip, Duration::from_millis(2500))?;
+    let udp_broadcast_scan = scan_udp_broadcast_hello(miio_port, &target_ip, Duration::from_millis(BROADCAST_SCAN_DURATION_MS))?;
 
     Ok(DiagnosticsReport {
         target_ip,
@@ -74,19 +75,16 @@ fn probe_tcp_connect(ip: &str, port: u16, timeout: Duration) -> TcpProbeResult {
 ///
 /// This is the first step in communicating with a miIO device.
 fn probe_udp_hello_unicast(ip: &str, port: u16) -> Result<UdpHelloProbeResult, MiioError> {
-    use crate::protocol::make_hello_packet;
-    use std::net::UdpSocket;
-
     let socket = UdpSocket::bind("0.0.0.0:0")?;
-    socket.set_read_timeout(Some(Duration::from_secs(3)))?;
-    socket.set_write_timeout(Some(Duration::from_secs(3)))?;
+    socket.set_read_timeout(Some(Duration::from_secs(DEFAULT_UDP_TIMEOUT_SECS)))?;
+    socket.set_write_timeout(Some(Duration::from_secs(DEFAULT_UDP_TIMEOUT_SECS)))?;
 
     let addr = format!("{ip}:{port}");
     let hello = make_hello_packet();
 
     socket.send_to(&hello, &addr)?;
 
-    let mut recv_buf = [0u8; 2048];
+    let mut recv_buf = [0u8; RECV_BUFFER_SIZE];
     match socket.recv_from(&mut recv_buf) {
         Ok((len, _)) => match parse_hello_response(&recv_buf[..len]) {
             Ok(parsed) => Ok(UdpHelloProbeResult {
@@ -123,9 +121,6 @@ fn scan_udp_broadcast_hello(
     target_ip: &str,
     listen_duration: Duration,
 ) -> Result<BroadcastScanResult, MiioError> {
-    use crate::protocol::make_hello_packet;
-    use std::net::UdpSocket;
-
     let socket = UdpSocket::bind("0.0.0.0:0")?;
     socket.set_read_timeout(Some(Duration::from_millis(200)))?;
     socket.set_write_timeout(Some(Duration::from_secs(2)))?;
@@ -135,7 +130,7 @@ fn scan_udp_broadcast_hello(
     let broadcast_addr = format!("255.255.255.255:{port}");
 
     // Prime a few broadcasts; some devices answer only after repeated discovery.
-    for _ in 0..3 {
+    for _ in 0..HELLO_RETRY_COUNT {
         let _ = socket.send_to(&hello, &broadcast_addr);
     }
 
@@ -144,7 +139,7 @@ fn scan_udp_broadcast_hello(
     let mut seen_keys: HashSet<String> = HashSet::new();
     let mut target_seen = false;
 
-    let mut recv_buf = [0u8; 2048];
+    let mut recv_buf = [0u8; RECV_BUFFER_SIZE];
 
     while Instant::now() < deadline {
         match socket.recv_from(&mut recv_buf) {

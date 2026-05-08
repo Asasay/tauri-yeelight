@@ -8,6 +8,30 @@ use serde::{Deserialize, Serialize};
 /// Default port for miIO protocol communication.
 pub const DEFAULT_MIIO_PORT: u16 = 54321;
 
+/// Alternative port for Yeelight (TCP).
+pub const YEELIGHT_PORT: u16 = 55443;
+
+/// Port for miIO protocol (UDP).
+pub const MIIO_PORT: u16 = 54321;
+
+/// Magic number that identifies miIO protocol packets.
+pub const MIIO_MAGIC: u16 = 0x2131;
+
+/// Size of the miIO packet header (not including checksum).
+pub const MIIO_HEADER_SIZE: usize = 32;
+
+/// Default UDP receive buffer size.
+pub const RECV_BUFFER_SIZE: usize = 2048;
+
+/// Default timeout for UDP operations (seconds).
+pub const DEFAULT_UDP_TIMEOUT_SECS: u64 = 3;
+
+/// Hello handshake retry attempts.
+pub const HELLO_RETRY_COUNT: usize = 3;
+
+/// Broadcast scan duration (milliseconds).
+pub const BROADCAST_SCAN_DURATION_MS: u64 = 2500;
+
 /// Request to send a miIO command to a device.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]

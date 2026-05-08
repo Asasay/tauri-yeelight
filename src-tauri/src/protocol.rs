@@ -3,14 +3,8 @@
 //! This module handles building and parsing miIO protocol packets,
 //! including the initial hello handshake and command/response packets.
 
-use crate::types::{HelloResponse, MiioError};
+use crate::types::{HelloResponse, MiioError, MIIO_HEADER_SIZE, MIIO_MAGIC};
 use crate::crypto::md5_bytes;
-
-/// Magic number that identifies miIO protocol packets.
-const MIIO_MAGIC: u16 = 0x2131;
-
-/// Size of the miIO packet header (not including checksum).
-const MIIO_HEADER_SIZE: usize = 32;
 
 /// Builds a complete miIO command packet.
 ///
